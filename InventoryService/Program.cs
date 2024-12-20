@@ -4,6 +4,7 @@ using InventoryService;
 using InventoryService.Messaging;
 using InventoryService.Model;
 using InventoryService.Service;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 

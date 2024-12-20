@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 namespace InventoryService.Controllers
-{    
+{
     [ApiController]
     [Route("[controller]")]
     public class InventoryController : Controller
@@ -18,42 +18,42 @@ namespace InventoryService.Controllers
         }
 
         [HttpGet("GetInventory")]
-        public async Task<Inventory> GetInventory(int id)
+        public async Task<Product> GetInventory(int id)
         {
-            int delay = new Random().Next(1000, 5000); 
-            await Task.Delay(delay); 
-            return new Inventory();
+            int delay = new Random().Next(1000, 5000);
+            await Task.Delay(delay);
+            return new Product();
         }
 
         [HttpGet("GetAllInventory")]
-        public async Task<List<Inventory>> GetAllInventory()
+        public async Task<List<Product>> GetAllInventory()
         {
-            int delay = new Random().Next(1000, 5000); 
-            await Task.Delay(delay); 
-            return new List<Inventory>();
+            int delay = new Random().Next(1000, 5000);
+            await Task.Delay(delay);
+            return new List<Product>();
         }
 
         [HttpPost("CreateInventory")]
-        public async Task<IActionResult> CreateInventory([FromBody] Inventory inventory)
+        public async Task<IActionResult> CreateInventory([FromBody] Product inventory)
         {
-            int delay = new Random().Next(1000, 5000); 
-            await Task.Delay(delay); 
+            int delay = new Random().Next(1000, 5000);
+            await Task.Delay(delay);
             return await Task.FromResult(Ok());
         }
 
         [HttpPut("UpdateInventory")]
-        public async Task<IActionResult> UpdateInventory([FromBody] Inventory inventory)
+        public async Task<IActionResult> UpdateInventory([FromBody] Product inventory)
         {
-            int delay = new Random().Next(1000, 5000); 
-            await Task.Delay(delay); 
+            int delay = new Random().Next(1000, 5000);
+            await Task.Delay(delay);
             return await Task.FromResult(Ok());
         }
 
         [HttpDelete("DeleteInventory")]
         public async Task<IActionResult> DeleteInventory(int id)
         {
-            int delay = new Random().Next(1000, 5000); 
-            await Task.Delay(delay); 
+            int delay = new Random().Next(1000, 5000);
+            await Task.Delay(delay);
             return await Task.FromResult(Ok());
         }
     }
