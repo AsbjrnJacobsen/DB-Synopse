@@ -4,8 +4,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using InventoryService.Model;
+using InventoryService.Service;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 
 namespace InventoryService.Controllers
 {
@@ -13,47 +14,46 @@ namespace InventoryService.Controllers
     [Route("[controller]")]
     public class InventoryController : Controller
     {
-        public InventoryController()
+        private readonly ProductService _productService;
+        public InventoryController(ProductService productService)
         {
+            _productService = productService;
         }
 
-        [HttpGet("GetInventory")]
-        public async Task<Product> GetInventory(int id)
+        [HttpGet("GetProduct")]
+        public async Task<Product> GetProduct(int id)
         {
-            int delay = new Random().Next(1000, 5000);
-            await Task.Delay(delay);
-            return new Product();
+            var product = await _productService.GetProduct(id);
+            return product;
         }
 
-        [HttpGet("GetAllInventory")]
-        public async Task<List<Product>> GetAllInventory()
+        [HttpGet("GetAllProducts")]
+        public async Task<List<Product>> GetAllProducts()
         {
-            int delay = new Random().Next(1000, 5000);
-            await Task.Delay(delay);
-            return new List<Product>();
+            var products = await _productService.GetAllProducts();
+            return products;
         }
 
-        [HttpPost("CreateInventory")]
-        public async Task<IActionResult> CreateInventory([FromBody] Product inventory)
+        [HttpPost("CreateProduct")]
+        public async Task<IActionResult> CreateProduct([FromBody] Product product)
         {
-            int delay = new Random().Next(1000, 5000);
-            await Task.Delay(delay);
+            product.Id = ObjectId.GenerateNewId().ToString();
+            System.Console.WriteLine($"CreateProduct controller {product.ProductId} : {product.Name} : {product.Stock} : {product.Id}");
+            await _productService.CreateProduct(product);
             return await Task.FromResult(Ok());
         }
 
         [HttpPut("UpdateInventory")]
-        public async Task<IActionResult> UpdateInventory([FromBody] Product inventory)
+        public async Task<IActionResult> UpdateInventory([FromBody] Product product)
         {
-            int delay = new Random().Next(1000, 5000);
-            await Task.Delay(delay);
+            await _productService.UpdateProduct(product);
             return await Task.FromResult(Ok());
         }
 
-        [HttpDelete("DeleteInventory")]
-        public async Task<IActionResult> DeleteInventory(int id)
+        [HttpDelete("DeleteProduct")]
+        public async Task<IActionResult> DeleteProduct(int id)
         {
-            int delay = new Random().Next(1000, 5000);
-            await Task.Delay(delay);
+            await _productService.DeleteProduct(id);
             return await Task.FromResult(Ok());
         }
     }
