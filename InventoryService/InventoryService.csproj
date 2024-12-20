@@ -9,6 +9,12 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.11" />
     <PackageReference Include="RabbitMQ.Client" Version="6.2.2" />
+    <PackageReference Include="MongoDB.Driver" Version="3.1.0" />
+<<<<<<< HEAD
+    <PackageReference Include="RabbitMQ.Client" Version="6.2.2" />
+=======
+    <PackageReference Include="MongoDB.Driver" Version="3.1.0" />
+>>>>>>> 9561dd0 (🚀 implemented controller and service class, still some connection problems)
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 

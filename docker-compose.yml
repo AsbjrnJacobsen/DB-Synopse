@@ -1,4 +1,18 @@
 services:
+  mongo:
+    image: "mongo:latest"
+    container_name: mongodb
+    restart: always
+    environment:
+      MONGODB_INITDB_ROOT_USERNAME: root # Define the root username
+      MONGODB_INITDB_ROOT_PASSWORD: example123 # Define the root password
+    ports:
+      - "27017:27017" # Expose MongoDB on port 27017 to your host machine
+    networks: # Add the network definition
+      - my-network
+    volumes:
+      - mongo_data:/data/db # Persist MongoDB data to a Docker volume
+
   rabbitmq:
     image: rabbitmq:3-management
     ports:
@@ -29,7 +43,7 @@ services:
     depends_on:
       servicediscovery:
         condition: service_started
-    
+
   inventoryservice:
     build:
       context: .
@@ -41,10 +55,10 @@ services:
     networks:
       - my_network
     depends_on:
-      rabbitmq:
-        condition: service_healthy
       servicediscovery:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8083 || exit 1" ]
       interval: 10s
@@ -105,6 +119,7 @@ services:
 
 volumes:
   mssql-order:
+  mongo_data:
 
 networks:
   my_network:
