@@ -1,4 +1,18 @@
 services:
+  mongo:
+    image: "mongo:latest"
+    container_name: mongodb
+    restart: always
+    environment:
+      MONGODB_INITDB_ROOT_USERNAME: root # Define the root username
+      MONGODB_INITDB_ROOT_PASSWORD: example123 # Define the root password
+    ports:
+      - "27017:27017" # Expose MongoDB on port 27017 to your host machine
+    networks: # Add the network definition
+      - my-network
+    volumes:
+      - mongo_data:/data/db # Persist MongoDB data to a Docker volume
+
   orderservice:
     build:
       context: .
@@ -12,8 +26,10 @@ services:
     depends_on:
       servicediscovery:
         condition: service_started
-    
+
   inventoryservice:
+    # ports:
+    #   - 8083:8083
     build:
       context: .
       dockerfile: InventoryService/Dockerfile
@@ -23,10 +39,13 @@ services:
       replicas: 2
     networks:
       - my_network
+      # - default
     depends_on:
       servicediscovery:
         condition: service_started
-      
+      # mongo:
+      #   condition: service_healthy
+
   loadbalancer:
     ports:
       - 8086:8086
@@ -38,7 +57,7 @@ services:
     networks:
       - my_network
       - default
-  
+
   servicediscovery:
     build:
       context: .
@@ -54,3 +73,6 @@ services:
 networks:
   my_network:
     driver: bridge
+
+volumes:
+  mongo_data:

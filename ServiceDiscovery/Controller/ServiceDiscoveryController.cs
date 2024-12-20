@@ -19,16 +19,16 @@ namespace ServiceDiscovery.Controller
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] MicroServiceInstance instance)
+        public async Task<IActionResult> Register([FromBody] MicroServiceInstance product)
         {
-            await _serviceDiscoveryService.Register(instance);
+            await _serviceDiscoveryService.Register(product);
             return Ok("Service registered successfully");
         }
 
         [HttpDelete("deregister")]
-        public async Task<IActionResult> Deregister([FromBody] MicroServiceInstance instance)
+        public async Task<IActionResult> Deregister([FromBody] MicroServiceInstance product)
         {
-            await _serviceDiscoveryService.Deregister(instance);
+            await _serviceDiscoveryService.Deregister(product);
             return Ok("Service deregistered successfully");
         }
     }
