@@ -3,6 +3,7 @@ using System.Text.Json;
 using InventoryService;
 using InventoryService.Model;
 using InventoryService.Service;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
