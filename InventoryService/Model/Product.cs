@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 
 namespace InventoryService.Model
 {
-    public class Inventory
+    public class Product
     {
-        
+
     }
 }
