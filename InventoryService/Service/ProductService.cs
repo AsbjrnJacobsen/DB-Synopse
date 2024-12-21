@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using InventoryService.Model;
+using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -12,11 +13,11 @@ namespace InventoryService.Service
     {
         private readonly IMongoCollection<Product> _products;
 
-        public ProductService(string connectionString, string databaseName, string collectionName)
+        public ProductService(IOptions<MongoDbSettings> settings)
         {
-            var client = new MongoClient(connectionString);
-            var database = client.GetDatabase(databaseName);
-            _products = database.GetCollection<Product>(collectionName);
+            var client = new MongoClient(settings.Value.ConnectionString);
+            var database = client.GetDatabase(settings.Value.DatabaseName);
+            _products = database.GetCollection<Product>(settings.Value.CollectionName);
         }
 
         public async Task<List<Product>> GetAllProducts()
