@@ -11,10 +11,12 @@ namespace InventoryService.Model
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
-
+        public string? Id { get; set; }
+        [BsonElement("ProductId")]
         public int ProductId { get; set; }
+        [BsonElement("Name")]
         public string Name { get; set; }
+        [BsonElement("Stock")]
         public int Stock { get; set; }
     }
 }
