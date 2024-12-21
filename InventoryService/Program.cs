@@ -3,6 +3,9 @@ using System.Text.Json;
 using InventoryService;
 using InventoryService.Model;
 using InventoryService.Service;
+using EasyNetQ;
+using EasyNetQ.DI.Microsoft;
+
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +13,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
 builder.Services.AddSingleton<ProductService>();
+
+var bus = EasyNetQ.RabbitHutch.CreateBus(builder.Configuration.GetConnectionString("RabbitMQ"));
+builder.Services.AddSingleton<IBus>(bus);
 
 
 builder.Services.AddControllers();
