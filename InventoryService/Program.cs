@@ -8,8 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var mongoDBSettings = builder.Configuration.GetSection("MongoDbSettings").Get<MongoDbSettings>();
-builder.Services.AddSingleton<ProductService>(sp => new ProductService(mongoDBSettings!.ConnectionString!, mongoDBSettings!.DatabaseName!, mongoDBSettings!.CollectionName!));
+builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
+builder.Services.AddSingleton<ProductService>();
+
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
