@@ -7,17 +7,13 @@ using System.Threading.Tasks;
 
 namespace OrderService.Model
 {
-    public class Order
+    public class Product
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int OrderId { get; set; }
-        [Required]
         public int ProductId { get; set; }
         [Required]
-        public bool VisableFlag { get; set; }
-
-        [ForeignKey(nameof(ProductId))]
-        public Product Product { get; set; }
+        public string ProductName { get; set; }
+        public string? ProductDescription { get; set; }
     }
 }
