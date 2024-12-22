@@ -1,7 +1,9 @@
 using System.Text;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using OrderService;
 using OrderService.Messaging;
+using OrderService.Data;
 using OrderService.Model;
 using OrderService.Service;
 

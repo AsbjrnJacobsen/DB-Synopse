@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using OrderService.Messaging;
 using OrderService.Model;
+using OrderService.Request_Responce;
+using OrderService.Service;
 
 namespace OrderService.Controllers
 {
@@ -14,35 +16,33 @@ namespace OrderService.Controllers
     [Route("[controller]")]
     public class OrderController : Controller
     {
+        private readonly IDBService _dbService;
         private readonly OrderMessagePublisher _publisher;
-        public OrderController(OrderMessagePublisher publisher)
+        public OrderController(OrderMessagePublisher publisher, IDBService dbService)
         {
+            this._dbService = dbService;
             _publisher = publisher;
         }
 
         [HttpGet("GetOrder")]
-        public async Task<Order> GetOrder(int id)
+        public async Task<GeneralResponse> GetOrder(int id)
         {
-            int delay = new Random().Next(1000, 5000); 
-            await Task.Delay(delay); 
-            return new Order();
+            var response = await _dbService.GetOrder(id);
+            return response;
         }
 
         [HttpGet("GetAllOrders")]
-        public async Task<List<Order>> GetAllOrders()
+        public async Task<GeneralResponse> GetAllOrders()
         {
-            int delay = new Random().Next(1000, 5000); 
-            await Task.Delay(delay); 
-            return new List<Order>();
+            var response = await _dbService.GetAllOrders();
+            return response;
         }
 
         [HttpPost("CreateOrder")]
         public async Task<IActionResult> CreateOrder([FromBody] Order order)
         {
             int delay = new Random().Next(1000, 5000); 
-            await Task.Delay(delay);
-            _publisher.PublishOrder(order.Quantity, order.ProductId, order.Quantity);
-
+            await Task.Delay(delay); 
             return await Task.FromResult(Ok());
         }
 

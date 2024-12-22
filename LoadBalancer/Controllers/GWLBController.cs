@@ -38,9 +38,9 @@ public class GWLBController : ControllerBase
     [Route("order")]
     [AcceptVerbs("GET", "POST", "PUT", "DELETE")]
     public async Task<IActionResult> ForwardToOrderService(string action, [FromQuery] int id = 0,
-        [FromBody] Order? order = null)
+        [FromBody] Payload? payload = null)
     {
-        return await ForwardRequest("OrderService", "Order", action, id, order!);
+        return await ForwardRequest("OrderService", "Order", action, id, payload!);
     }
 
     [Route("inventory")]
