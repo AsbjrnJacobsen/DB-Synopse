@@ -45,9 +45,9 @@ public class GWLBController : ControllerBase
 
     [Route("inventory")]
     [AcceptVerbs("GET", "POST", "PUT", "DELETE")]
-    public async Task<IActionResult> ForwardToInventoryService(string action, [FromBody] Product? product, [FromQuery] int id = 0)
+    public async Task<IActionResult> ForwardToInventoryService(string action, [FromQuery] int id = 0, [FromBody] Product? product = null)
     {
-        System.Console.WriteLine(product.Name);
+        //System.Console.WriteLine(product.Name);
         return await ForwardRequest("InventoryService", "Inventory", action, id, product!);
     }
 

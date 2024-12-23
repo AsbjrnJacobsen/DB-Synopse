@@ -17,67 +17,134 @@ namespace InventoryService.Service
 
         public ProductService(IOptions<MongoDbSettings> settings, IBus bus)
         {
-            var client = new MongoClient(settings.Value.ConnectionString);
-            var database = client.GetDatabase(settings.Value.DatabaseName);
-            _products = database.GetCollection<Product>(settings.Value.CollectionName);
+            try
+            {
+                var client = new MongoClient(settings.Value.ConnectionString);
+                var database = client.GetDatabase(settings.Value.DatabaseName);
+                _products = database.GetCollection<Product>(settings.Value.CollectionName);
 
-            _bus = bus;
+                _bus = bus;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error: " + e.Message);
+            }
         }
 
         public async Task<List<Product>> GetAllProducts()
         {
-            return await _products.Find(new BsonDocument()).ToListAsync();
+            try
+            {
+                return await _products.Find(new BsonDocument()).ToListAsync();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error: " + e.Message);
+                return new List<Product>();
+            }
         }
 
         public async Task<Product> GetProduct(int id)
         {
-            return await _products.Find(Builders<Product>.Filter.Eq(p => p.ProductId, id)).FirstOrDefaultAsync();
+            try
+            {
+                return await _products.Find(Builders<Product>.Filter.Eq(p => p.ProductId, id)).FirstOrDefaultAsync();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error: " + e.Message);
+                return null;
+            }
         }
 
         public async Task CreateProduct(Product product)
         {
-            System.Console.WriteLine($"CreateProduct service {product.ProductId} : {product.Name} : {product.Stock} : {product.Id}");
-            await _products.InsertOneAsync(product);
+            try
+            {
+                System.Console.WriteLine($"CreateProduct service {product.ProductId} : {product.Name} : {product.Stock} : {product.Id}");
+                await _products.InsertOneAsync(product);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error while creating product: " + e.Message);
+            }
         }
 
         public async Task UpdateProduct(Product product)
         {
-            await _products.ReplaceOneAsync(Builders<Product>.Filter.Eq(p => p.ProductId, product.ProductId), product);
+            try
+            {
+                await _products.ReplaceOneAsync(Builders<Product>.Filter.Eq(p => p.ProductId, product.ProductId), product);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error while updating product: " + e.Message);
+            }
         }
 
         public async Task DeleteProduct(int id)
         {
-            await _products.DeleteOneAsync(Builders<Product>.Filter.Eq(p => p.ProductId, id));
+            try
+            {
+                await _products.DeleteOneAsync(Builders<Product>.Filter.Eq(p => p.ProductId, id));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error while deleting product: " + e.Message);
+            }
         }
 
         public async Task HandleOrderCreated(dynamic eventData)
         {
-            var productId = eventData.ProductId;
-            var quantity = eventData.Quantity;
-
-            var product = await _products.Find(Builders<Product>.Filter.Eq(p => p.ProductId, (int)productId)).FirstOrDefaultAsync();
-            if (product.Stock >= quantity)
+            try
             {
-                product.Stock -= quantity;
-                await _products.ReplaceOneAsync(Builders<Product>.Filter.Eq(p => p.ProductId, (int)productId), product);
+                var productId = eventData.ProductId;
+                var quantity = eventData.Quantity;
 
-                // Publish event to RabbitMQ via EasyNetQ
-                var inventoryReservedEvent = new
+                var product = await _products.Find(Builders<Product>.Filter.Eq(p => p.ProductId, (int)productId)).FirstOrDefaultAsync();
+                if (product.Stock >= quantity)
                 {
-                    OrderId = eventData.OrderId,
-                    ProductId = productId,
-                    Quantity = quantity
-                };
-                await _bus.PubSub.PublishAsync(inventoryReservedEvent);
+                    product.Stock -= quantity;
+                    await _products.ReplaceOneAsync(Builders<Product>.Filter.Eq(p => p.ProductId, (int)productId), product);
+
+                    // Publish event to RabbitMQ via EasyNetQ
+                    var inventoryReservedEvent = new
+                    {
+                        OrderId = eventData.OrderId,
+                        ProductId = productId,
+                        Quantity = quantity
+                    };
+                    await _bus.PubSub.PublishAsync(inventoryReservedEvent);
+                }
+                else
+                {
+                    // Publish event to RabbitMQ via EasyNetQ
+                    var inventoryNotAvailableEvent = new
+                    {
+                        OrderId = eventData.OrderId
+                    };
+                    await _bus.PubSub.PublishAsync(inventoryNotAvailableEvent);
+                }
             }
-            else
+            catch (Exception e)
             {
-                // Publish event to RabbitMQ via EasyNetQ
-                var inventoryNotAvailableEvent = new
+                Console.WriteLine("Error handling order created event: " + e.Message);
+
+                // Send problematic message to Dead Letter Queue
+                var deadLetterMessage = new
                 {
-                    OrderId = eventData.OrderId
+                    EventData = eventData,
+                    ErrorMessage = e.Message,
+                    Timestamp = DateTime.UtcNow
                 };
-                await _bus.PubSub.PublishAsync(inventoryNotAvailableEvent);
+                try
+                {
+                    await _bus.PubSub.PublishAsync(deadLetterMessage, "DeadLetterQueue");
+                }
+                catch (Exception dlqException)
+                {
+                    Console.WriteLine("Error sending to Dead Letter Queue: " + dlqException.Message);
+                }
             }
         }
     }
