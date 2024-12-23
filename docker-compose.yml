@@ -10,6 +10,8 @@ services:
       - "27017:27017" # Expose MongoDB on port 27017 to your host machine
     volumes:
       - mongo_data:/data/db # Persist MongoDB data to a Docker volume
+    networks:
+      - my_network
 
   rabbitmq:
     image: rabbitmq:3-management
