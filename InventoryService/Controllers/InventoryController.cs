@@ -38,23 +38,23 @@ namespace InventoryService.Controllers
         public async Task<IActionResult> CreateProduct([FromBody] Product product)
         {
             product.Id = ObjectId.GenerateNewId().ToString();
-            System.Console.WriteLine($"CreateProduct controller {product.ProductId} : {product.Name} : {product.Stock} : {product.Id}");
             await _productService.CreateProduct(product);
-            return await Task.FromResult(Ok());
+            return Ok();
         }
 
-        [HttpPut("UpdateInventory")]
-        public async Task<IActionResult> UpdateInventory([FromBody] Product product)
+        [HttpPut("UpdateProduct")]
+        public async Task<IActionResult> UpdateProduct([FromBody] Product productUpdate)
         {
-            await _productService.UpdateProduct(product);
-            return await Task.FromResult(Ok());
+            await _productService.UpdateProduct(productUpdate);
+            return Ok();
         }
+
 
         [HttpDelete("DeleteProduct")]
-        public async Task<IActionResult> DeleteProduct(int id)
+        public async Task<IActionResult> DeleteProduct(int productId)
         {
-            await _productService.DeleteProduct(id);
-            return await Task.FromResult(Ok());
+            await _productService.DeleteProduct(productId);
+            return Ok();
         }
     }
 }
