@@ -24,7 +24,7 @@ namespace OrderService.Service
         public async Task<GeneralResponse> GetOrder(int id)
         {
             try {
-                var order = await _orderDbContext.ordersTable.FirstOrDefaultAsync();
+                var order = await _orderDbContext.ordersTable.FirstOrDefaultAsync(x => x.OrderId == id);
 
                 if (order == null)
                 {
