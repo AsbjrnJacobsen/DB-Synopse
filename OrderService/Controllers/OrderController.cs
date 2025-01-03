@@ -18,10 +18,10 @@ namespace OrderService.Controllers
     {
         private readonly IDBService _dbService;
         private readonly OrderMessagePublisher _publisher;
-        public OrderController(OrderMessagePublisher publisher, IDBService dbService)
+        public OrderController(IDBService dbService, OrderMessagePublisher publisher)
         {
-            this._dbService = dbService;
             _publisher = publisher;
+            this._dbService = dbService;
         }
 
         [HttpGet("GetOrder")]
@@ -41,25 +41,29 @@ namespace OrderService.Controllers
         [HttpPost("CreateOrder")]
         public async Task<IActionResult> CreateOrder([FromBody] Order order)
         {
-            int delay = new Random().Next(1000, 5000); 
-            await Task.Delay(delay); 
-            return await Task.FromResult(Ok());
+            _publisher.PublishOrder(payload);
+            
+            
+            var response = await _dbService.CreateOrder(payload);
+            if (response._status != 200) return BadRequest(response);
+
+            return Ok(response);
         }
 
         [HttpPut("UpdateOrder")]
-        public async Task<IActionResult> UpdateOrder([FromBody] Order order)
+        public async Task<IActionResult> UpdateOrder([FromBody] Payload payload)
         {
-            int delay = new Random().Next(1000, 5000); 
-            await Task.Delay(delay); 
-            return await Task.FromResult(Ok());
+            var response = await _dbService.UpdateOrder(payload);
+            if (response._status != 200) return BadRequest(response);
+            return Ok(response);
         }
 
         [HttpDelete("DeleteOrder")]
-        public async Task<IActionResult> DeleteOrder(int id)
+        public async Task<IActionResult> DeleteOrder([FromBody] Payload payload)
         {
-            int delay = new Random().Next(1000, 5000); 
-            await Task.Delay(delay); 
-            return await Task.FromResult(Ok());
+            var response = await _dbService.DeleteOrder(payload);
+            if (response._status != 200) return BadRequest(response);
+            return Ok(response);
         }
     }
 }

@@ -2,7 +2,7 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
-
+using InventoryService.Model;
 namespace InventoryService.Messaging
 {
     public class InventoryMessageConsumer : BackgroundService
@@ -36,7 +36,7 @@ namespace InventoryService.Messaging
                                   autoDelete: false,
                                   arguments: null);
             // Bind Queue
-            _channel.QueueBind(queue: "order_queue", exchange: "order_exchange", routingKey: "");
+            _channel.QueueBind(queue: "order_queue", exchange: "order_exchange", routingKey: "orderRK");
             
         }
 
@@ -48,22 +48,22 @@ namespace InventoryService.Messaging
             {
                 var body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
-                var order = JsonSerializer.Deserialize<OrderMessage>(message);
+                var order = JsonSerializer.Deserialize<Payload>(message);
 
-                Console.WriteLine($"[InventoryMessageConsumer] Order received: {order.OrderId}");
+                Console.WriteLine($"---------[InventoryMessageConsumer]-------- OrderID received: {order.OrderDto.OrderId}, {order}");
 
                 try
                 {
-                    var isStockAvailable = CheckInventory(order.ProductId, order.Quantity);
+                    var isStockAvailable = CheckInventory(order.OrderDto.ProductId, order.Quantity);
 
                     if (!isStockAvailable)
                         throw new Exception("Insufficient stock");
 
-                    Console.WriteLine($"[InventoryMessageConsumer] Stock confirmed for Order {order.OrderId}");
+                    Console.WriteLine($"---------[InventoryMessageConsumer]--------- Stock confirmed for OrderID {order.OrderDto.OrderId}, ");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[InventoryMessageConsumer] Error: {ex.Message}");
+                    Console.WriteLine($"---------[InventoryMessageConsumer]--------- Error: {ex.Message}");
                     MoveToDeadLetterQueue(body, ex.Message);
                 }
             };
@@ -73,7 +73,7 @@ namespace InventoryService.Messaging
             return Task.CompletedTask;
         }
 
-        private bool CheckInventory(int productId, int quantity)
+        private bool CheckInventory(int? productId, int quantity)
         {
             // Placeholder for MongoDB stock check
             return quantity <= 100; // Simulated stock check
@@ -100,7 +100,7 @@ namespace InventoryService.Messaging
                                   basicProperties: properties,
                                   body: body);
 
-            Console.WriteLine($"[InventoryMessageConsumer] Moved message to DLQ: {Encoding.UTF8.GetString(body)}");
+            Console.WriteLine($"---------[InventoryMessageConsumer]--------- Moved message to DLQ: {Encoding.UTF8.GetString(body)}");
         }
 
         public override void Dispose()
