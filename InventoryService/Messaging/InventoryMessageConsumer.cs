@@ -3,15 +3,21 @@ using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
 using InventoryService.Model;
+using InventoryService.Service;
+
+
 namespace InventoryService.Messaging
 {
     public class InventoryMessageConsumer : BackgroundService
     {
         private readonly IConnection _connection;
         private readonly IModel _channel;
-
-        public InventoryMessageConsumer()
+        private readonly ProductService _productService;
+        
+        public InventoryMessageConsumer(ProductService productService)
         {
+            _productService = productService;
+            
             var factory = new ConnectionFactory
             {
                 HostName = "rabbitmq",
@@ -22,7 +28,7 @@ namespace InventoryService.Messaging
             
             using var connection = factory.CreateConnection();
 
-
+            
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
             
@@ -54,10 +60,10 @@ namespace InventoryService.Messaging
 
                 try
                 {
-                    var isStockAvailable = CheckInventory(order.OrderDto.ProductId, order.Quantity);
+                    var isStockAvailable = CheckInventory(order);
 
                     if (!isStockAvailable)
-                        throw new Exception("Insufficient stock");
+                        Console.WriteLine("Insufficient stock");
 
                     Console.WriteLine($"---------[InventoryMessageConsumer]--------- Stock confirmed for OrderID {order.OrderDto.OrderId}, ");
                 }
@@ -73,10 +79,13 @@ namespace InventoryService.Messaging
             return Task.CompletedTask;
         }
 
-        private bool CheckInventory(int? productId, int quantity)
+        private bool CheckInventory(Payload payload)
         {
-            // Placeholder for MongoDB stock check
-            return quantity <= 100; // Simulated stock check
+            Console.WriteLine($"CheckInventoryMethod: {payload.Quantity}");
+            var flag = _productService.HandleOrderCreated(payload);
+            Console.WriteLine($"CheckInventoryMethod: {flag.Result.ToString()}");
+            return flag.Result;
+
         }
 
         private void MoveToDeadLetterQueue(byte[] body, string error)

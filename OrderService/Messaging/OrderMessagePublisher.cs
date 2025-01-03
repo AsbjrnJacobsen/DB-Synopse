@@ -38,7 +38,7 @@ namespace OrderService.Messaging
 
         public void PublishOrder(Payload payload)
         {
-            Console.WriteLine($"---------[Payload]--------- {payload.ToString()}");
+            Console.WriteLine($"---------[Payload]--------- {payload}");
             var message = JsonSerializer.Serialize(payload);
 
             var body = Encoding.UTF8.GetBytes(message);
