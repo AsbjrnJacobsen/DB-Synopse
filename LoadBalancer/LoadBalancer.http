@@ -1,6 +1,0 @@
-@LoadBalancer_HostAddress = http://localhost:5262
-
-GET {{LoadBalancer_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
