@@ -15,6 +15,8 @@ namespace OrderService.Model
         [Required]
         public int ProductId { get; set; }
         [Required]
+        public int Quantity { get; set; }
+        [Required]
         public bool VisableFlag { get; set; }
 
         [ForeignKey(nameof(ProductId))]
