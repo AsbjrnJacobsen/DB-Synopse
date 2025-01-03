@@ -1,6 +1,7 @@
 using RabbitMQ.Client;
 using System.Text;
 using System.Text.Json;
+using OrderService.Model;
 
 namespace OrderService.Messaging
 {
@@ -24,7 +25,7 @@ namespace OrderService.Messaging
             //declare ex
             _channel.ExchangeDeclare(exchange: "order_exchange", type: ExchangeType.Direct);
             // Declare the queue with dead-letter exchange support
-            /*_channel.QueueDeclare(queue: "order_queue",
+            _channel.QueueDeclare(queue: "order_queue",
                 durable: true,
                 exclusive: false,
                 autoDelete: false,
@@ -32,26 +33,22 @@ namespace OrderService.Messaging
                 {
                     { "dlx-exchange", "dlx" }
                 });
-                */
+                
         }
 
-        public void PublishOrder(int orderId, int productId, int quantity)
+        public void PublishOrder(Payload payload)
         {
-            var message = JsonSerializer.Serialize(new
-            {
-                OrderId = orderId,
-                ProductId = productId,
-                Quantity = quantity
-            });
+            Console.WriteLine($"---------[Payload]--------- {payload.ToString()}");
+            var message = JsonSerializer.Serialize(payload);
 
             var body = Encoding.UTF8.GetBytes(message);
 
             _channel.BasicPublish(exchange: "order_exchange",
-                routingKey: "order_routing_key",
+                routingKey: "orderRK",
                 basicProperties: null,
                 body: body);
 
-            Console.WriteLine($"[OrderMessagePublisher] Message sent: {message}");
+            Console.WriteLine($"---------[OrderMessagePublisher]--------- Message sent: {message}");
         }
 
         public void Dispose()

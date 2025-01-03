@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using OrderService.Messaging;
 using OrderService.Model;
 using OrderService.Request_Responce;
 using OrderService.Service;
@@ -16,8 +17,10 @@ namespace OrderService.Controllers
     public class OrderController : Controller
     {
         private readonly IDBService _dbService;
-        public OrderController(IDBService dbService)
+        private readonly OrderMessagePublisher _publisher;
+        public OrderController(IDBService dbService, OrderMessagePublisher publisher)
         {
+            _publisher = publisher;
             this._dbService = dbService;
         }
 
@@ -38,8 +41,12 @@ namespace OrderService.Controllers
         [HttpPost("CreateOrder")]
         public async Task<IActionResult> CreateOrder([FromBody] Payload payload)
         {
+            _publisher.PublishOrder(payload);
+            
+            
             var response = await _dbService.CreateOrder(payload);
             if (response._status != 200) return BadRequest(response);
+
             return Ok(response);
         }
 
@@ -48,6 +55,7 @@ namespace OrderService.Controllers
         {
             var response = await _dbService.UpdateOrder(payload);
             if (response._status != 200) return BadRequest(response);
+
             return Ok(response);
         }
 

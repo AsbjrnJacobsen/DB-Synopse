@@ -3,8 +3,10 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using OrderService;
 using OrderService.Data;
+using OrderService.Messaging;
 using OrderService.Model;
 using OrderService.Service;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +15,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHostedService<ServiceRegistrarHostedService>();
 builder.Services.AddScoped<IDBService, DBService>();
+builder.Services.AddSingleton<OrderMessagePublisher>();
 
 var configuration = builder.Configuration;
 builder.Services.AddDbContext<OrderDbContext>(options =>
