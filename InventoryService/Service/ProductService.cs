@@ -5,25 +5,20 @@ using InventoryService.Model;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using EasyNetQ;
 
 namespace InventoryService.Service
 {
     public class ProductService
     {
         private readonly IMongoCollection<Product> _products;
-        private readonly string _orderQueue = "order_queue";
-        private readonly IBus _bus;
 
-        public ProductService(IOptions<MongoDbSettings> settings, IBus bus)
+        public ProductService(IOptions<MongoDbSettings> settings)
         {
             try
             {
                 var client = new MongoClient(settings.Value.ConnectionString);
                 var database = client.GetDatabase(settings.Value.DatabaseName);
                 _products = database.GetCollection<Product>(settings.Value.CollectionName);
-
-                _bus = bus;
             }
             catch (Exception e)
             {
@@ -107,14 +102,6 @@ namespace InventoryService.Service
                     product.Stock -= quantity;
                     await _products.ReplaceOneAsync(Builders<Product>.Filter.Eq(p => p.ProductId, (int)productId), product);
 
-                    // Publish event to RabbitMQ via EasyNetQ
-                    var inventoryReservedEvent = new
-                    {
-                        OrderId = eventData.OrderId,
-                        ProductId = productId,
-                        Quantity = quantity
-                    };
-                    await _bus.PubSub.PublishAsync(inventoryReservedEvent);
                 }
                 else
                 {
@@ -123,7 +110,6 @@ namespace InventoryService.Service
                     {
                         OrderId = eventData.OrderId
                     };
-                    await _bus.PubSub.PublishAsync(inventoryNotAvailableEvent);
                 }
             }
             catch (Exception e)
@@ -131,15 +117,10 @@ namespace InventoryService.Service
                 Console.WriteLine("Error handling order created event: " + e.Message);
 
                 // Send problematic message to Dead Letter Queue
-                var deadLetterMessage = new
-                {
-                    EventData = eventData,
-                    ErrorMessage = e.Message,
-                    Timestamp = DateTime.UtcNow
-                };
+
                 try
                 {
-                    await _bus.PubSub.PublishAsync(deadLetterMessage, "DeadLetterQueue");
+                    //DeadLetterQueue Send something
                 }
                 catch (Exception dlqException)
                 {
