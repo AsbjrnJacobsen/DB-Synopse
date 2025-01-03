@@ -12,16 +12,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
 builder.Services.AddSingleton<ProductService>();
 
-var rabbitMqConnectionString = builder.Configuration.GetConnectionString("RabbitMQ");
-if (!string.IsNullOrEmpty(rabbitMqConnectionString))
-{
-    var bus = RabbitHutch.CreateBus(rabbitMqConnectionString);
-    builder.Services.AddSingleton<IBus>(bus);
-}
-else
-{
-    builder.Services.AddSingleton<IBus, NullBus>();
-}
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
