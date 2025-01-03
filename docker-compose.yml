@@ -41,8 +41,10 @@ services:
     networks:
       - my_network
     depends_on:
-      - servicediscovery
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
+      servicediscovery:
+        condition: service_started
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8083 || exit 1" ]
       interval: 10s

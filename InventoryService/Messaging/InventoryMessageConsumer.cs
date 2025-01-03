@@ -14,13 +14,20 @@ namespace InventoryService.Messaging
         {
             var factory = new ConnectionFactory
             {
-                HostName = "localhost",
+                HostName = "rabbitmq",
                 Port = 5672,
                 UserName = "guest",
                 Password = "guest"
             };
+            
+            using var connection = factory.CreateConnection();
+
+
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
+            
+            // Declare exchange
+            _channel.ExchangeDeclare(exchange: "order_exchange", type: ExchangeType.Direct);
 
             // Declare queue
             _channel.QueueDeclare(queue: "order_queue",
@@ -28,6 +35,9 @@ namespace InventoryService.Messaging
                                   exclusive: false,
                                   autoDelete: false,
                                   arguments: null);
+            // Bind Queue
+            _channel.QueueBind(queue: "order_queue", exchange: "order_exchange", routingKey: "");
+            
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -71,6 +81,8 @@ namespace InventoryService.Messaging
 
         private void MoveToDeadLetterQueue(byte[] body, string error)
         {
+
+            
             _channel.QueueDeclare(queue: "dlx_order_queue",
                                   durable: true,
                                   exclusive: false,
@@ -83,7 +95,7 @@ namespace InventoryService.Messaging
                 { "error", error }
             };
 
-            _channel.BasicPublish(exchange: "",
+            _channel.BasicPublish(exchange: "dlx_order_queue",
                                   routingKey: "dlx_order_queue",
                                   basicProperties: properties,
                                   body: body);

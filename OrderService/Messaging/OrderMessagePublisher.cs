@@ -13,23 +13,26 @@ namespace OrderService.Messaging
         {
             var factory = new ConnectionFactory
             {
-                HostName = "localhost",
+                HostName = "rabbitmq",
                 Port = 5672,
                 UserName = "guest",
                 Password = "guest"
             };
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
-
+            
+            //declare ex
+            _channel.ExchangeDeclare(exchange: "order_exchange", type: ExchangeType.Direct);
             // Declare the queue with dead-letter exchange support
-            _channel.QueueDeclare(queue: "order_queue",
+            /*_channel.QueueDeclare(queue: "order_queue",
                 durable: true,
                 exclusive: false,
                 autoDelete: false,
                 arguments: new Dictionary<string, object>
                 {
-                    { "x-dead-letter-exchange", "dlx_exchange" }
+                    { "dlx-exchange", "dlx" }
                 });
+                */
         }
 
         public void PublishOrder(int orderId, int productId, int quantity)
@@ -43,8 +46,8 @@ namespace OrderService.Messaging
 
             var body = Encoding.UTF8.GetBytes(message);
 
-            _channel.BasicPublish(exchange: "exchange",
-                routingKey: "order_queue",
+            _channel.BasicPublish(exchange: "order_exchange",
+                routingKey: "order_routing_key",
                 basicProperties: null,
                 body: body);
 

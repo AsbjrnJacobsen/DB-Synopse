@@ -13,20 +13,23 @@ namespace InventoryService.Messaging
         {
             var factory = new ConnectionFactory
             {
-                HostName = "localhost",
+                HostName = "rabbitmq",
                 Port = 5672,
                 UserName = "guest",
                 Password = "guest"
             };
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
-
+            
+            
+            
             // Declare the DLQ
             _channel.QueueDeclare(queue: "dlx_order_queue",
                 durable: true,
                 exclusive: false,
                 autoDelete: false,
                 arguments: null);
+            
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
