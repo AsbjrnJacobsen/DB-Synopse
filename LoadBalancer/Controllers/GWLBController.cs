@@ -45,10 +45,10 @@ public class GWLBController : ControllerBase
 
     [Route("inventory")]
     [AcceptVerbs("GET", "POST", "PUT", "DELETE")]
-    public async Task<IActionResult> ForwardToInventoryService(string action, [FromQuery] int id = 0,
-        [FromBody] Inventory? inventory = null)
+    public async Task<IActionResult> ForwardToInventoryService(string action, [FromQuery] int id = 0, [FromBody] Product? product = null)
     {
-        return await ForwardRequest("InventoryService", "Inventory", action, id, inventory!);
+        //System.Console.WriteLine(product.Name);
+        return await ForwardRequest("InventoryService", "Inventory", action, id, product!);
     }
 
 
@@ -61,7 +61,7 @@ public class GWLBController : ControllerBase
         // Forward the request
         var targetUrl = $"http://{instanceUrl.IpAddress}:{instanceUrl.Port}/{controllerName}/{action}";
         if (id > 0) targetUrl += $"?id={id}";
-        
+
         try
         {
             HttpResponseMessage response;
@@ -80,6 +80,7 @@ public class GWLBController : ControllerBase
                     response = await _httpClient.GetAsync(targetUrl);
                     break;
                 case "POST":
+                    System.Console.WriteLine("gateway controller" + objectToForward.GetType().Name);
                     response = await _httpClient.PostAsync(targetUrl, requestContent);
                     break;
                 case "PUT":
