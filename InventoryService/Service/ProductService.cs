@@ -5,25 +5,20 @@ using InventoryService.Model;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using EasyNetQ;
 
 namespace InventoryService.Service
 {
     public class ProductService
     {
         private readonly IMongoCollection<Product> _products;
-        private readonly string _orderQueue = "order_queue";
-        private readonly IBus _bus;
 
-        public ProductService(IOptions<MongoDbSettings> settings, IBus bus)
+        public ProductService(IOptions<MongoDbSettings> settings)
         {
             try
             {
                 var client = new MongoClient(settings.Value.ConnectionString);
                 var database = client.GetDatabase(settings.Value.DatabaseName);
                 _products = database.GetCollection<Product>(settings.Value.CollectionName);
-
-                _bus = bus;
             }
             catch (Exception e)
             {
@@ -61,7 +56,8 @@ namespace InventoryService.Service
         {
             try
             {
-                System.Console.WriteLine($"CreateProduct service {product.ProductId} : {product.Name} : {product.Stock} : {product.Id}");
+                System.Console.WriteLine(
+                    $"CreateProduct service {product.ProductId} : {product.Name} : {product.Stock} : {product.Id}");
                 await _products.InsertOneAsync(product);
             }
             catch (Exception e)
@@ -74,7 +70,8 @@ namespace InventoryService.Service
         {
             try
             {
-                await _products.ReplaceOneAsync(Builders<Product>.Filter.Eq(p => p.ProductId, product.ProductId), product);
+                await _products.ReplaceOneAsync(Builders<Product>.Filter.Eq(p => p.ProductId, product.ProductId),
+                    product);
             }
             catch (Exception e)
             {
@@ -94,58 +91,39 @@ namespace InventoryService.Service
             }
         }
 
-        public async Task HandleOrderCreated(dynamic eventData)
+        public async Task<bool> HandleOrderCreated(Payload payload)
         {
             try
             {
-                var productId = eventData.ProductId;
-                var quantity = eventData.Quantity;
-
-                var product = await _products.Find(Builders<Product>.Filter.Eq(p => p.ProductId, (int)productId)).FirstOrDefaultAsync();
-                if (product.Stock >= quantity)
+                var productId = payload.OrderDto.ProductId;
+                var quantity = payload.Quantity;
+                
+                var product = await _products.Find(Builders<Product>.Filter.Eq(p => p.ProductId, (int)productId))
+                    .FirstOrDefaultAsync();
+                if (product != null)
                 {
-                    product.Stock -= quantity;
-                    await _products.ReplaceOneAsync(Builders<Product>.Filter.Eq(p => p.ProductId, (int)productId), product);
+                    Console.WriteLine($"Product: {productId} does exist, it is: {product}");
+                    
+                    if (product.Stock >= quantity)
+                    {
+                        product.Stock -= quantity;
+                        await _products.ReplaceOneAsync(Builders<Product>.Filter.Eq(p => p.ProductId, (int)productId),
+                            product);
 
-                    // Publish event to RabbitMQ via EasyNetQ
-                    var inventoryReservedEvent = new
-                    {
-                        OrderId = eventData.OrderId,
-                        ProductId = productId,
-                        Quantity = quantity
-                    };
-                    await _bus.PubSub.PublishAsync(inventoryReservedEvent);
-                }
-                else
-                {
-                    // Publish event to RabbitMQ via EasyNetQ
-                    var inventoryNotAvailableEvent = new
-                    {
-                        OrderId = eventData.OrderId
-                    };
-                    await _bus.PubSub.PublishAsync(inventoryNotAvailableEvent);
-                }
+                        return true;
+                    }
+                } return false;
             }
             catch (Exception e)
             {
                 Console.WriteLine("Error handling order created event: " + e.Message);
 
                 // Send problematic message to Dead Letter Queue
-                var deadLetterMessage = new
-                {
-                    EventData = eventData,
-                    ErrorMessage = e.Message,
-                    Timestamp = DateTime.UtcNow
-                };
-                try
-                {
-                    await _bus.PubSub.PublishAsync(deadLetterMessage, "DeadLetterQueue");
-                }
-                catch (Exception dlqException)
-                {
-                    Console.WriteLine("Error sending to Dead Letter Queue: " + dlqException.Message);
-                }
+                throw;
             }
+
+            
         }
     }
 }
+
