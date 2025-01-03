@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using OrderService;
+using OrderService.Messaging;
 using OrderService.Model;
 using OrderService.Service;
 
@@ -11,6 +12,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 builder.Services.AddHostedService<ServiceRegistrarHostedService>();
+builder.Services.AddSingleton<OrderMessagePublisher>();
 
 var app = builder.Build();
 

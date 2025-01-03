@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using OrderService.Messaging;
 using OrderService.Model;
 
 namespace OrderService.Controllers
@@ -13,9 +14,10 @@ namespace OrderService.Controllers
     [Route("[controller]")]
     public class OrderController : Controller
     {
-        public OrderController()
+        private readonly OrderMessagePublisher _publisher;
+        public OrderController(OrderMessagePublisher publisher)
         {
-
+            _publisher = publisher;
         }
 
         [HttpGet("GetOrder")]
@@ -38,7 +40,9 @@ namespace OrderService.Controllers
         public async Task<IActionResult> CreateOrder([FromBody] Order order)
         {
             int delay = new Random().Next(1000, 5000); 
-            await Task.Delay(delay); 
+            await Task.Delay(delay);
+            _publisher.PublishOrder(order.Quantity, order.ProductId, order.Quantity);
+
             return await Task.FromResult(Ok());
         }
 

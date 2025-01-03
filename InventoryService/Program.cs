@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using InventoryService;
+using InventoryService.Messaging;
 using InventoryService.Model;
 using InventoryService.Service;
 
@@ -10,6 +11,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHostedService<ServiceRegistrarHostedService>();
+builder.Services.AddHostedService<InventoryMessageConsumer>();
 
 
 var app = builder.Build();
