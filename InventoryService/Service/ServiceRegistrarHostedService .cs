@@ -20,7 +20,6 @@ namespace InventoryService.Service
         public Task StartAsync(CancellationToken cancellationToken)
         {
             _appLifetime.ApplicationStarted.Register(() => Task.Run(() => RegisterServiceAsync(cancellationToken)));
-
             return Task.CompletedTask;
         }
 
