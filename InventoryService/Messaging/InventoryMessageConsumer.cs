@@ -5,7 +5,6 @@ using System.Text.Json;
 using InventoryService.Model;
 using InventoryService.Service;
 
-
 namespace InventoryService.Messaging
 {
     public class InventoryMessageConsumer : BackgroundService
@@ -13,11 +12,10 @@ namespace InventoryService.Messaging
         private readonly IConnection _connection;
         private readonly IModel _channel;
         private readonly ProductService _productService;
-        
+
         public InventoryMessageConsumer(ProductService productService)
         {
             _productService = productService;
-            
             var factory = new ConnectionFactory
             {
                 HostName = "rabbitmq",
@@ -25,91 +23,53 @@ namespace InventoryService.Messaging
                 UserName = "guest",
                 Password = "guest"
             };
-            
-            using var connection = factory.CreateConnection();
 
-            
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
-            
-            // Declare exchange
-            _channel.ExchangeDeclare(exchange: "order_exchange", type: ExchangeType.Direct);
 
-            // Declare queue
-            _channel.QueueDeclare(queue: "order_queue",
-                                  durable: true,
-                                  exclusive: false,
-                                  autoDelete: false,
-                                  arguments: null);
-            // Bind Queue
+            _channel.ExchangeDeclare(exchange: "order_exchange", type: ExchangeType.Direct);
+            _channel.QueueDeclare(queue: "order_queue", durable: true, exclusive: false, autoDelete: false);
             _channel.QueueBind(queue: "order_queue", exchange: "order_exchange", routingKey: "orderRK");
-            
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var consumer = new EventingBasicConsumer(_channel);
 
-            consumer.Received += (model, ea) =>
+            consumer.Received += async (model, ea) =>
             {
                 var body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
-                var order = JsonSerializer.Deserialize<Payload>(message);
+                var payload = JsonSerializer.Deserialize<Payload>(message);
 
-                Console.WriteLine($"---------[InventoryMessageConsumer]-------- OrderID received: {order.OrderDto.OrderId}, {order}");
+                Console.WriteLine($"Received Order request: {payload.OrderDto.OrderId}");
 
-                try
-                {
-                    var isStockAvailable = CheckInventory(order);
-
-                    if (!isStockAvailable)
-                        Console.WriteLine("Insufficient stock");
-
-                    Console.WriteLine($"---------[InventoryMessageConsumer]--------- Stock confirmed for OrderID {order.OrderDto.OrderId}, ");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"---------[InventoryMessageConsumer]--------- Error: {ex.Message}");
-                    MoveToDeadLetterQueue(body, ex.Message);
-                }
+                var isStockAvailable = await CheckInventoryAsync(payload);
+                RespondToOrder(ea.BasicProperties, isStockAvailable);
             };
 
             _channel.BasicConsume(queue: "order_queue", autoAck: true, consumer: consumer);
-
             return Task.CompletedTask;
         }
 
-        private bool CheckInventory(Payload payload)
+        private async Task<bool> CheckInventoryAsync(Payload payload)
         {
-            Console.WriteLine($"CheckInventoryMethod: {payload.Quantity}");
-            var flag = _productService.HandleOrderCreated(payload);
-            Console.WriteLine($"CheckInventoryMethod: {flag.Result.ToString()}");
-            return flag.Result;
-
+            Console.WriteLine($"CheckInventoryAsync: Payload Quantity - {payload.Quantity.ToString()}");
+            return await _productService.HandleOrderCreated(payload);
         }
 
-        private void MoveToDeadLetterQueue(byte[] body, string error)
+        private void RespondToOrder(IBasicProperties requestProperties, bool isStockAvailable)
         {
+            if (string.IsNullOrEmpty(requestProperties.ReplyTo) || string.IsNullOrEmpty(requestProperties.CorrelationId))
+                return;
 
-            
-            _channel.QueueDeclare(queue: "dlx_order_queue",
-                                  durable: true,
-                                  exclusive: false,
-                                  autoDelete: false,
-                                  arguments: null);
+            var response = isStockAvailable ? "Order Confirmed" : "Insufficient Stock";
+            var responseBytes = Encoding.UTF8.GetBytes(response);
 
-            var properties = _channel.CreateBasicProperties();
-            properties.Headers = new Dictionary<string, object>
-            {
-                { "error", error }
-            };
+            var responseProps = _channel.CreateBasicProperties();
+            responseProps.CorrelationId = requestProperties.CorrelationId;
 
-            _channel.BasicPublish(exchange: "dlx_order_queue",
-                                  routingKey: "dlx_order_queue",
-                                  basicProperties: properties,
-                                  body: body);
-
-            Console.WriteLine($"---------[InventoryMessageConsumer]--------- Moved message to DLQ: {Encoding.UTF8.GetString(body)}");
+            _channel.BasicPublish(exchange: "", routingKey: requestProperties.ReplyTo, basicProperties: responseProps, body: responseBytes);
         }
 
         public override void Dispose()
@@ -118,12 +78,5 @@ namespace InventoryService.Messaging
             _connection.Close();
             base.Dispose();
         }
-    }
-
-    public class OrderMessage
-    {
-        public int OrderId { get; set; }
-        public int ProductId { get; set; }
-        public int Quantity { get; set; }
     }
 }

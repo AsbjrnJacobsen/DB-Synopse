@@ -41,14 +41,32 @@ namespace OrderService.Controllers
         [HttpPost("CreateOrder")]
         public async Task<IActionResult> CreateOrder([FromBody] Payload payload)
         {
-            _publisher.PublishOrder(payload);
+            try
+            {
+                var response = await _publisher.PublishOrderAsync(payload, TimeSpan.FromSeconds(10));
+                if (response == "Order Confirmed")
+                {
+                    Console.WriteLine("Order successfully confirmed.");
+                    var createOrder = await _dbService.CreateOrder(payload);
+                    Console.WriteLine($"Order created: {createOrder} status: {createOrder._status} objectList count: {createOrder} payload: {payload.OrderDto.OrderId}");
+                    return Ok("Order Confirmed");
+                }
+                return BadRequest("Order Denied: " + response);
+            }
+            catch (TaskCanceledException)
+            {
+                Console.WriteLine("Timeout waiting for order confirmation.");
+                return StatusCode(504, "Timeout waiting for order confirmation");
+            }
+               
             
             
-            var response = await _dbService.CreateOrder(payload);
-            if (response._status != 200) return BadRequest(response);
+            
+            // if (response._status != 200) return BadRequest(response);
 
-            return Ok(response);
-        }
+            return Ok();
+         
+        } 
 
         [HttpPut("UpdateOrder")]
         public async Task<IActionResult> UpdateOrder([FromBody] Payload payload)

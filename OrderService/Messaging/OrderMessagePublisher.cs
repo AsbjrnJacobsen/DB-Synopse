@@ -1,4 +1,5 @@
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
 using OrderService.Model;
@@ -9,6 +10,9 @@ namespace OrderService.Messaging
     {
         private readonly IConnection _connection;
         private readonly IModel _channel;
+        private readonly string _replyQueueName;
+        private readonly EventingBasicConsumer _consumer;
+        private readonly IDictionary<string, TaskCompletionSource<string>> _pendingResponses;
 
         public OrderMessagePublisher()
         {
@@ -21,34 +25,47 @@ namespace OrderService.Messaging
             };
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
-            
-            //declare ex
-            _channel.ExchangeDeclare(exchange: "order_exchange", type: ExchangeType.Direct);
-            // Declare the queue with dead-letter exchange support
-            _channel.QueueDeclare(queue: "order_queue",
-                durable: true,
-                exclusive: false,
-                autoDelete: false,
-                arguments: new Dictionary<string, object>
+
+            _replyQueueName = _channel.QueueDeclare().QueueName;
+            _pendingResponses = new Dictionary<string, TaskCompletionSource<string>>();
+
+            _consumer = new EventingBasicConsumer(_channel);
+            _consumer.Received += (model, ea) =>
+            {
+                var correlationId = ea.BasicProperties.CorrelationId;
+                if (_pendingResponses.TryGetValue(correlationId, out var tcs))
                 {
-                    { "dlx-exchange", "dlx" }
-                });
-                
+                    var response = Encoding.UTF8.GetString(ea.Body.ToArray());
+                    tcs.SetResult(response);
+                }
+            };
+
+            _channel.BasicConsume(queue: _replyQueueName, autoAck: true, consumer: _consumer);
         }
 
-        public void PublishOrder(Payload payload)
+        public async Task<string> PublishOrderAsync(Payload payload, TimeSpan timeout)
         {
-            Console.WriteLine($"---------[Payload]--------- {payload}");
-            var message = JsonSerializer.Serialize(payload);
+            var correlationId = Guid.NewGuid().ToString();
+            var taskCompletionSource = new TaskCompletionSource<string>();
+            _pendingResponses[correlationId] = taskCompletionSource;
 
+            var cancellationTokenSource = new CancellationTokenSource(timeout);
+            cancellationTokenSource.Token.Register(() => taskCompletionSource.TrySetCanceled(), useSynchronizationContext: false);
+
+            var message = JsonSerializer.Serialize(payload);
             var body = Encoding.UTF8.GetBytes(message);
+
+            var props = _channel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+            props.ReplyTo = _replyQueueName;
 
             _channel.BasicPublish(exchange: "order_exchange",
                 routingKey: "orderRK",
-                basicProperties: null,
+                basicProperties: props,
                 body: body);
 
-            Console.WriteLine($"---------[OrderMessagePublisher]--------- Message sent: {message}");
+            Console.WriteLine($"Message sent with CorrelationId: {correlationId}");
+            return await taskCompletionSource.Task;
         }
 
         public void Dispose()
