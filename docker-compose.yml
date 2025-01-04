@@ -43,7 +43,7 @@ services:
     depends_on:
       servicediscovery:
         condition: service_started
-
+    
   inventoryservice:
     build:
       context: .

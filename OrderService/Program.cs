@@ -7,12 +7,12 @@ using OrderService.Messaging;
 using OrderService.Model;
 using OrderService.Service;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddControllers();
 builder.Services.AddHostedService<ServiceRegistrarHostedService>();
 builder.Services.AddScoped<IDBService, DBService>();
 builder.Services.AddSingleton<OrderMessagePublisher>();
