@@ -39,7 +39,7 @@ namespace OrderService.Controllers
         }
 
         [HttpPost("CreateOrder")]
-        public async Task<IActionResult> CreateOrder([FromBody] Order order)
+        public async Task<IActionResult> CreateOrder([FromBody] Payload payload)
         {
             try
             {
