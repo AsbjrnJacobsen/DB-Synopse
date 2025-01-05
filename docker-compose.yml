@@ -30,6 +30,22 @@ services:
       timeout: 10s
       retries: 5
 
+  order-db:
+      image: mcr.microsoft.com/mssql/server:2022-latest
+      environment:
+        MSSQL_SA_PASSWORD: "SuperSecret7!"
+        ACCEPT_EULA: "Y"
+      volumes:
+        - mssql-order:/var/opt/mssql
+      networks:
+        - my_network
+      healthcheck:
+        test: ["CMD-SHELL", "pgrep sqlservr"]
+        interval: 10s
+        retries: 1
+        start_period: 60s
+        timeout: 5s
+
   orderservice:
     build:
       context: .
@@ -41,8 +57,14 @@ services:
     networks:
       - my_network
     depends_on:
+      order-db:
+        condition: service_healthy
       servicediscovery:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      migration_service:
+        condition: service_completed_successfully
     
   inventoryservice:
     build:
@@ -59,12 +81,8 @@ services:
         condition: service_started
       rabbitmq:
         condition: service_healthy
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8083 || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      
+      migration_service:
+        condition: service_completed_successfully
       
   loadbalancer:
     ports:
@@ -77,6 +95,9 @@ services:
     networks:
       - my_network
       - default
+    depends_on:
+      migration_service:
+        condition: service_completed_successfully
   
   servicediscovery:
     build:
@@ -89,22 +110,8 @@ services:
     depends_on:
       loadbalancer:
         condition: service_started
-
-  order-db:
-      image: mcr.microsoft.com/mssql/server:2022-latest
-      environment:
-        MSSQL_SA_PASSWORD: "SuperSecret7!"
-        ACCEPT_EULA: "Y"
-      volumes:
-        - mssql-order:/var/opt/mssql
-      networks:
-        - my_network
-      healthcheck:
-        test: ["CMD-SHELL", "pgrep sqlservr"]
-        interval: 10s
-        retries: 1
-        start_period: 60s
-        timeout: 5s
+      migration_service:
+        condition: service_completed_successfully
 
   migration_service:
     build:
