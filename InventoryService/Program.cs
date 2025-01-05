@@ -11,13 +11,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
 builder.Services.AddSingleton<ProductService>();
 
-
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHostedService<ServiceRegistrarHostedService>();
 builder.Services.AddHostedService<InventoryMessageConsumer>();
+builder.Services.AddHostedService<DeadLetterQueueConsumer>();
 
 var app = builder.Build();
 

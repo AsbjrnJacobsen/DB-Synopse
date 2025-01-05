@@ -46,7 +46,6 @@ namespace OrderService.Controllers
                 var response = await _publisher.PublishOrderAsync(payload, TimeSpan.FromSeconds(10));
                 if (response == "Order Confirmed")
                 {
-                    
                     var createOrder = await _dbService.CreateOrder(payload);
                     Console.WriteLine("Order successfully confirmed.");
                     Console.WriteLine($"Order created: {createOrder} status: {createOrder._status} objectList count: {createOrder} payload: {payload.OrderDto.OrderId}");
@@ -59,7 +58,7 @@ namespace OrderService.Controllers
                 Console.WriteLine("Timeout waiting for order confirmation.");
                 return StatusCode(504, "Timeout waiting for order confirmation");
             }
-        } 
+        }
 
         [HttpPut("UpdateOrder")]
         public async Task<IActionResult> UpdateOrder([FromBody] Payload payload)
