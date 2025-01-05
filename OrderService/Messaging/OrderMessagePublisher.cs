@@ -34,12 +34,25 @@ namespace OrderService.Messaging
             // Request and Reply
             _consumer.Received += (model, ea) =>
             {
-                var correlationId = ea.BasicProperties.CorrelationId;
-                if (_pendingResponses.TryGetValue(correlationId, out var tcs))
+                try
                 {
-                    var response = Encoding.UTF8.GetString(ea.Body.ToArray());
-                    tcs.SetResult(response);
+                    var correlationId = ea.BasicProperties.CorrelationId;
+                    if (_pendingResponses.TryGetValue(correlationId, out var tcs))
+                    {
+                        var response = Encoding.UTF8.GetString(ea.Body.ToArray());
+                        tcs.SetResult(response);
+                    }
                 }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    _channel.BasicPublish(exchange: "dlx",
+                        routingKey: "",
+                        basicProperties: null,
+                        body: Encoding.UTF8.GetBytes(e.Message));
+                }
+                
+                
             };
 
             _channel.BasicConsume(queue: _replyQueueName, autoAck: true, consumer: _consumer);

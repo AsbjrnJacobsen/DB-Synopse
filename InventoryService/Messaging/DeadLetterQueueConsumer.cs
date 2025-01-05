@@ -24,20 +24,20 @@ namespace InventoryService.Messaging
             _channel.ExchangeDeclare(exchange: "dlx", type: ExchangeType.Fanout);
             
             // Declare the DLQ
-            _channel.QueueDeclare(queue: "dlx_order_queue",
+            _channel.QueueDeclare(queue: "dlx_queue",
                 durable: true,
                 exclusive: false,
                 autoDelete: false,
                 arguments: null);
             
-            _channel.QueueBind(queue: "dlx_order_queue", exchange: "dlx", routingKey: "");
+            _channel.QueueBind(queue: "dlx_queue", exchange: "dlx", routingKey: "");
             Console.WriteLine("DLX UP");
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
+/*
             var consumer = new EventingBasicConsumer(_channel);
-
             consumer.Received += (model, ea) =>
             {
                 var body = ea.Body.ToArray();
@@ -49,9 +49,9 @@ namespace InventoryService.Messaging
                 {
                     Console.WriteLine($"------[DLQ Consumer]------ Error detail from message body: {message}");
                 }
-            };
 
             _channel.BasicConsume(queue: "dlx_order_queue", autoAck: true, consumer: consumer);
+            }; */
 
             return Task.CompletedTask;
         }
