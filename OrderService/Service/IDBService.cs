@@ -15,5 +15,6 @@ namespace OrderService.Service
         Task<GeneralResponse> CreateOrder(Payload payload);
         Task<GeneralResponse> UpdateOrder(Payload payload);
         Task<GeneralResponse> DeleteOrder(Payload payload);
+        Task<GeneralResponse> DeleteOrderPermanently(Payload payload);
     }
 }
