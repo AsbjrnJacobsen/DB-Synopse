@@ -42,16 +42,21 @@ namespace OrderService.Controllers
         public async Task<IActionResult> CreateOrder([FromBody] Payload payload)
         {
             try
-            {   // Send message to inventory, inventory checks stock and responds.
+            {   
+                var createOrder = await _dbService.CreateOrder(payload);
+                if (createOrder._status != 200) return BadRequest(createOrder);
+
                 var response = await _publisher.PublishOrderAsync(payload, TimeSpan.FromSeconds(10));
+
                 if (response == "Order Confirmed")
                 {
-                    
-                    var createOrder = await _dbService.CreateOrder(payload);
                     Console.WriteLine("Order successfully confirmed.");
                     Console.WriteLine($"Order created: {createOrder} status: {createOrder._status} objectList count: {createOrder} payload: {payload.OrderDto.OrderId}");
                     return Ok("Order Confirmed");
                 }
+                
+                await _dbService.DeleteOrderPermanently((Payload)createOrder._objectType!);
+                
                 return BadRequest("Order Denied: " + response);
             }
             catch (TaskCanceledException)

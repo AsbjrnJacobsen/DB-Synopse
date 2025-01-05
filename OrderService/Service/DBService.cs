@@ -63,17 +63,19 @@ namespace OrderService.Service
 
                 if (payload.OrderDto.ProductId.HasValue)
                 {
-                    //TODO
-
-                    await _orderDbContext.ordersTable.AddAsync(new Order() 
+                    var newOrder = new Order()
                     {
                         ProductId = payload.OrderDto.ProductId.Value,
                         VisableFlag = true
-                    });
+                    };
+
+                    await _orderDbContext.ordersTable.AddAsync(newOrder);
 
                     await _orderDbContext.SaveChangesAsync();
+
+                    payload.OrderDto.OrderId = newOrder.OrderId;
                     
-                    return new GeneralResponse(200, "Order Created");
+                    return new GeneralResponse(200, "Order Created", payload);
                 }
 
                 return new GeneralResponse(400, "Order not Created");
@@ -142,6 +144,34 @@ namespace OrderService.Service
                     
                     order.VisableFlag = false;
                     _orderDbContext.ordersTable.Update(order);
+                    await _orderDbContext.SaveChangesAsync();
+
+                    return new GeneralResponse(200, "Order deleted");
+                }
+                
+                return new GeneralResponse(400, "OrderId is required");
+            } catch (Exception e) {
+                Console.WriteLine(e);
+                return new GeneralResponse(400, "Order not deleted: " + e.Message);
+            }
+        }
+
+
+        public async Task<GeneralResponse> DeleteOrderPermanently(Payload payload)
+        {
+            try {
+                if (payload.OrderDto.OrderId.HasValue)
+                {
+                    var order = await _orderDbContext.ordersTable
+                    .Where(o => o.OrderId == payload.OrderDto.OrderId.Value)
+                    .FirstOrDefaultAsync();
+
+                    if (order == null)
+                    {
+                        return new GeneralResponse(405, "Order not found");
+                    }    
+                    
+                    _orderDbContext.ordersTable.Remove(order);
                     await _orderDbContext.SaveChangesAsync();
 
                     return new GeneralResponse(200, "Order deleted");
