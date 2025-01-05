@@ -21,7 +21,7 @@ namespace InventoryService.Messaging
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
             
-            
+            _channel.ExchangeDeclare(exchange: "dlx", type: ExchangeType.Fanout);
             
             // Declare the DLQ
             _channel.QueueDeclare(queue: "dlx_order_queue",
@@ -30,6 +30,7 @@ namespace InventoryService.Messaging
                 autoDelete: false,
                 arguments: null);
             
+            _channel.QueueBind(queue: "dlx_order_queue", exchange: "dlx", routingKey: "");
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -40,7 +41,13 @@ namespace InventoryService.Messaging
             {
                 var body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
-                Console.WriteLine($"[DLQ Consumer] Dead-lettered message: {message}");
+                
+                Console.WriteLine($"-------[DLQ Consumer]------ Dead-lettered message: {message}");
+                
+                if (message.Contains("Error:"))
+                {
+                    Console.WriteLine($"------[DLQ Consumer]------ Error detail from message body: {message}");
+                }
             };
 
             _channel.BasicConsume(queue: "dlx_order_queue", autoAck: true, consumer: consumer);

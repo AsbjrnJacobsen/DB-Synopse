@@ -34,8 +34,9 @@ namespace InventoryService.Messaging
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            // Listen for message
+            // calls RespondToOrder
             var consumer = new EventingBasicConsumer(_channel);
-
             consumer.Received += async (model, ea) =>
             {
                 var body = ea.Body.ToArray();
@@ -60,14 +61,20 @@ namespace InventoryService.Messaging
 
         private void RespondToOrder(IBasicProperties requestProperties, bool isStockAvailable)
         {
-            if (string.IsNullOrEmpty(requestProperties.ReplyTo) || string.IsNullOrEmpty(requestProperties.CorrelationId))
+            if (string.IsNullOrEmpty(requestProperties.ReplyTo) ||
+                string.IsNullOrEmpty(requestProperties.CorrelationId))
+            {
+                Console.WriteLine("-------[InventoryMessageConsumer]------ Missing ReplyTo or CorrelationId. Cannot send response.");
                 return;
+            }
 
             var response = isStockAvailable ? "Order Confirmed" : "Insufficient Stock";
             var responseBytes = Encoding.UTF8.GetBytes(response);
 
             var responseProps = _channel.CreateBasicProperties();
             responseProps.CorrelationId = requestProperties.CorrelationId;
+            
+            Console.WriteLine($"-------[InventoryMessageConsumer]---- Sending response: {response} with CorrelationId: {requestProperties.CorrelationId}");
 
             _channel.BasicPublish(exchange: "", routingKey: requestProperties.ReplyTo, basicProperties: responseProps, body: responseBytes);
         }
