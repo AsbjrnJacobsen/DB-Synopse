@@ -30,6 +30,8 @@ namespace OrderService.Messaging
             _pendingResponses = new Dictionary<string, TaskCompletionSource<string>>();
 
             _consumer = new EventingBasicConsumer(_channel);
+            
+            // Request and Reply
             _consumer.Received += (model, ea) =>
             {
                 var correlationId = ea.BasicProperties.CorrelationId;
@@ -45,6 +47,8 @@ namespace OrderService.Messaging
 
         public async Task<string> PublishOrderAsync(Payload payload, TimeSpan timeout)
         {
+            // Called in OrderController.
+            // Starts the request and reply messaging
             var correlationId = Guid.NewGuid().ToString();
             var taskCompletionSource = new TaskCompletionSource<string>();
             _pendingResponses[correlationId] = taskCompletionSource;
@@ -65,7 +69,18 @@ namespace OrderService.Messaging
                 body: body);
 
             Console.WriteLine($"Message sent with CorrelationId: {correlationId}");
-            return await taskCompletionSource.Task;
+
+            try
+            {
+                var result = await taskCompletionSource.Task;
+                return result;
+            }
+            finally
+            {
+                _pendingResponses.Remove(correlationId);
+            }
+            
+            //return await taskCompletionSource.Task;
         }
 
         public void Dispose()
