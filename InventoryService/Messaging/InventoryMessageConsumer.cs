@@ -34,23 +34,49 @@ namespace InventoryService.Messaging
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // Listen for message
-            // calls RespondToOrder
-            var consumer = new EventingBasicConsumer(_channel);
-            consumer.Received += async (model, ea) =>
+            try
             {
-                var body = ea.Body.ToArray();
-                var message = Encoding.UTF8.GetString(body);
-                var payload = JsonSerializer.Deserialize<Payload>(message);
+                // Listen for message
+                // calls RespondToOrder
+                var consumer = new EventingBasicConsumer(_channel);
+                consumer.Received += async (model, ea) =>
+                {
+                    try
+                    {
+                        var body = ea.Body.ToArray();
+                        var message = Encoding.UTF8.GetString(body);
+                        var payload = JsonSerializer.Deserialize<Payload>(message);
 
-                Console.WriteLine($"Received Order request: {payload.OrderDto.OrderId}");
+                        Console.WriteLine($"Received Order request: {payload.OrderDto.OrderId}");
 
-                var isStockAvailable = await CheckInventoryAsync(payload);
-                RespondToOrder(ea.BasicProperties, isStockAvailable);
-            };
+                        var isStockAvailable = await CheckInventoryAsync(payload);
+                        RespondToOrder(ea.BasicProperties, isStockAvailable);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                        _channel.BasicPublish(exchange: "dlx",
+                            routingKey: "",
+                            basicProperties: null,
+                            body: Encoding.UTF8.GetBytes(e.Message));
+                    }
+                    
+                    
+                };
 
-            _channel.BasicConsume(queue: "order_queue", autoAck: true, consumer: consumer);
-            return Task.CompletedTask;
+                _channel.BasicConsume(queue: "order_queue", autoAck: false, consumer: consumer);
+                return Task.CompletedTask;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                _channel.BasicPublish(exchange: "dlx",
+                    routingKey: "",
+                    basicProperties: null,
+                    body: Encoding.UTF8.GetBytes(e.Message));
+                return Task.CompletedTask;
+            }
+            
         }
 
         private async Task<bool> CheckInventoryAsync(Payload payload)
