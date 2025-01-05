@@ -31,6 +31,7 @@ namespace InventoryService.Messaging
                 arguments: null);
             
             _channel.QueueBind(queue: "dlx_order_queue", exchange: "dlx", routingKey: "");
+            Console.WriteLine("DLX UP");
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
