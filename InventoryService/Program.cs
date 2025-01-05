@@ -18,6 +18,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHostedService<ServiceRegistrarHostedService>();
 builder.Services.AddHostedService<InventoryMessageConsumer>();
+builder.Services.AddHostedService<DeadLetterQueueConsumer>();
 
 var app = builder.Build();
 
