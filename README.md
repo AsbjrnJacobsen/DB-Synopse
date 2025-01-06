@@ -2,10 +2,11 @@
  Synopsis Project for Database for Developers
 
 # Setup
-First make sure that inside the OrderService, you make the file "run-ef-database-update" is LF line break types.
+First make sure that inside the OrderService, you make the file "run-ef-database-update" to a LF line break types.
+
+Make sure docker is running.
 
 Then input the following command into the console:
-Make sure docker is running.
 
 ```
 docker compose up
@@ -15,7 +16,7 @@ To access and use the system open swagger:
 localhost:8086/swagger/index.html
 ```
 # Test Run
-First use CreateProduct POST request to make dummy data, inside mongoDB
+**CreateProduct:** First use CreateProduct POST request to make dummy data, inside mongoDB
 ```
 {
   "productId": 1,
@@ -25,7 +26,7 @@ First use CreateProduct POST request to make dummy data, inside mongoDB
 ```
 ![CreateProduct](https://github.com/AsbjrnJacobsen/DB-Synopse/blob/main/PNG/CreateProduct.png)
 
-Now you can test to create orders using CreateOrder POST
+**CreateOrder:** Now you can test create orders by using CreateOrder POST
 ```
 {
   "orderDto": {
