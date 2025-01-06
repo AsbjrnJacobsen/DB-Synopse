@@ -17,10 +17,10 @@ namespace OrderService.Controllers
     public class OrderController : Controller
     {
         private readonly IDBService _dbService;
-        private readonly OrderMessagePublisher _publisher;
-        public OrderController(IDBService dbService, OrderMessagePublisher publisher)
+        private readonly OrderMessageManager _manager;
+        public OrderController(IDBService dbService, OrderMessageManager manager)
         {
-            _publisher = publisher;
+            _manager = manager;
             this._dbService = dbService;
         }
 
@@ -46,7 +46,7 @@ namespace OrderService.Controllers
                 var createOrder = await _dbService.CreateOrder(payload);
                 if (createOrder._status != 200) return BadRequest(createOrder);
 
-                var response = await _publisher.PublishOrderAsync(payload, TimeSpan.FromSeconds(10));
+                var response = await _manager.PublishOrderAsync(payload, TimeSpan.FromSeconds(10));
 
                 if (response == "Order Confirmed")
                 {
