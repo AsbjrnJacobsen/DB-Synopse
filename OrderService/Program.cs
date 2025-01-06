@@ -15,7 +15,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHostedService<ServiceRegistrarHostedService>();
 builder.Services.AddScoped<IDBService, DBService>();
-builder.Services.AddSingleton<OrderMessagePublisher>();
+builder.Services.AddSingleton<OrderMessageManager>();
 
 var configuration = builder.Configuration;
 builder.Services.AddDbContext<OrderDbContext>(options =>

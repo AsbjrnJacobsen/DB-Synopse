@@ -7,13 +7,13 @@ using InventoryService.Service;
 
 namespace InventoryService.Messaging
 {
-    public class InventoryMessageConsumer : BackgroundService
+    public class InventoryOrderConsumer : BackgroundService
     {
         private readonly IConnection _connection;
         private readonly IModel _channel;
         private readonly ProductService _productService;
 
-        public InventoryMessageConsumer(ProductService productService)
+        public InventoryOrderConsumer(ProductService productService)
         {
             _productService = productService;
             var factory = new ConnectionFactory

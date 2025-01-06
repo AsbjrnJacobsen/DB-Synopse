@@ -4,12 +4,12 @@ using System.Text;
 
 namespace InventoryService.Messaging
 {
-    public class DeadLetterQueueConsumer : BackgroundService
+    public class DeadLetterQueueManager : BackgroundService
     {
         private readonly IConnection _connection;
         private readonly IModel _channel;
 
-        public DeadLetterQueueConsumer()
+        public DeadLetterQueueManager()
         {
             var factory = new ConnectionFactory
             {

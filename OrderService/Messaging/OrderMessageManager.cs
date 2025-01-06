@@ -6,7 +6,7 @@ using OrderService.Model;
 
 namespace OrderService.Messaging
 {
-    public class OrderMessagePublisher : IDisposable
+    public class OrderMessageManager : IDisposable
     {
         private readonly IConnection _connection;
         private readonly IModel _channel;
@@ -14,7 +14,7 @@ namespace OrderService.Messaging
         private readonly EventingBasicConsumer _consumer;
         private readonly IDictionary<string, TaskCompletionSource<string>> _pendingResponses;
 
-        public OrderMessagePublisher()
+        public OrderMessageManager()
         {
             var factory = new ConnectionFactory
             {
